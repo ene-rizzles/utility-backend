@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use tokio::time::{interval, Duration};
 use tracing::{info, warn};
 
@@ -10,9 +10,7 @@ pub struct LoadRunner {
 
 impl LoadRunner {
     pub fn new(count: u64) -> Self {
-        let meters: Vec<String> = (0..count)
-            .map(|i| format!("MTR-LOAD-{:05}", i))
-            .collect();
+        let meters: Vec<String> = (0..count).map(|i| format!("MTR-LOAD-{:05}", i)).collect();
         Self {
             concurrent_meters: count,
             meters,

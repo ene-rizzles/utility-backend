@@ -1,7 +1,6 @@
 use bytes::Bytes;
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
 use tracing::{info, warn};
 
 pub struct MeterEvent {
@@ -11,10 +10,10 @@ pub struct MeterEvent {
     pub token_volume: u64,
 }
 
+#[allow(dead_code)]
 pub struct BackpressureFilter {
     buffer_capacity: usize,
     tx: mpsc::Sender<MeterEvent>,
-    rx: mpsc::Receiver<MeterEvent>,
 }
 
 impl BackpressureFilter {
@@ -24,7 +23,6 @@ impl BackpressureFilter {
             Self {
                 buffer_capacity: capacity,
                 tx,
-                rx,
             },
             rx,
         )

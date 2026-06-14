@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use tracing::{info, warn};
+use tracing::info;
 
 pub struct DriftCalibration {
     pub meter_id: String,
@@ -24,17 +24,19 @@ impl DriftWorker {
         raw_reading: f64,
         ambient_temp: f64,
     ) -> f64 {
-        let calibration = self
-            .calibrations
-            .iter()
-            .find(|c| c.meter_id == meter_id);
+        let calibration = self.calibrations.iter().find(|c| c.meter_id == meter_id);
         match calibration {
             Some(c) => {
                 let temp_coefficient = 0.00015;
                 let temp_correction = 1.0 + (ambient_temp - 25.0) * temp_coefficient;
                 let drift_correction = 1.0 + c.accumulated_drift_ppb / 1_000_000_000.0;
                 let corrected = raw_reading * temp_correction * drift_correction;
-                info!(meter_id, raw = raw_reading, corrected, "drift correction applied");
+                info!(
+                    meter_id,
+                    raw = raw_reading,
+                    corrected,
+                    "drift correction applied"
+                );
                 corrected
             }
             None => {

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
-use tracing::{info, warn};
+use tracing::info;
 
+#[derive(serde::Deserialize)]
 pub struct LedgerEvent {
     pub event_id: String,
     pub contract_id: String,
@@ -8,6 +9,7 @@ pub struct LedgerEvent {
     pub timestamp: DateTime<Utc>,
 }
 
+#[allow(dead_code)]
 pub struct SlidingWindowSyncer {
     window_start: DateTime<Utc>,
     last_synced_sequence: u64,

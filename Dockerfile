@@ -3,7 +3,8 @@ FROM rust:1.77-slim AS builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
+RUN cargo generate-lockfile
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release 2>/dev/null || true
 

@@ -1,8 +1,14 @@
-use axum::{http::Request, middleware::Next, response::Response};
-use std::sync::Arc;
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+    middleware::Next,
+    response::Response,
+};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use tracing::warn;
 
+#[allow(dead_code)]
 pub struct TokenBucket {
     tokens: AtomicU64,
     max_tokens: u64,
@@ -26,7 +32,12 @@ impl TokenBucket {
             }
             if self
                 .tokens
-                .compare_exchange(current, current - count, Ordering::Release, Ordering::Relaxed)
+                .compare_exchange(
+                    current,
+                    current - count,
+                    Ordering::Release,
+                    Ordering::Relaxed,
+                )
                 .is_ok()
             {
                 return true;
@@ -35,17 +46,14 @@ impl TokenBucket {
     }
 }
 
-pub async fn rate_limit_layer<B>(
-    req: Request<B>,
-    next: Next<B>,
-) -> Response {
+pub async fn rate_limit_layer(req: Request<axum::body::Body>, next: Next) -> Response {
     let bucket = req.extensions().get::<Arc<TokenBucket>>();
     match bucket {
         Some(b) if !b.try_consume(1) => {
             warn!("rate limit exceeded for request");
-            http::Response::builder()
-                .status(429)
-                .body(axum::body::Body::from("rate limit exceeded"))
+            Response::builder()
+                .status(StatusCode::TOO_MANY_REQUESTS)
+                .body(Body::from("rate limit exceeded"))
                 .unwrap()
         }
         _ => next.run(req).await,

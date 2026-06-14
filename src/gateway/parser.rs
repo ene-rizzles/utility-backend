@@ -1,6 +1,3 @@
-use bytes::Bytes;
-use tracing::warn;
-
 pub struct CompressedEnvelope {
     pub meter_id: String,
     pub payload: Vec<u8>,
@@ -16,8 +13,8 @@ pub fn parse_envelope(data: &[u8]) -> Result<CompressedEnvelope, &'static str> {
         return Err("malformed envelope: meter_id truncated");
     }
     let meter_id_bytes = &data[2..2 + meter_id_len];
-    let meter_id = String::from_utf8(meter_id_bytes.to_vec())
-        .map_err(|_| "invalid utf-8 meter_id")?;
+    let meter_id =
+        String::from_utf8(meter_id_bytes.to_vec()).map_err(|_| "invalid utf-8 meter_id")?;
     let payload_start = 2 + meter_id_len;
     let payload_end = data.len() - 32;
     let payload = data[payload_start..payload_end].to_vec();

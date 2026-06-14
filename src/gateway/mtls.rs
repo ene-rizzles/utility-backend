@@ -12,13 +12,13 @@ pub fn build_mtls_acceptor(
     let key_bytes = std::fs::read(key_path)?;
     let ca_bytes = std::fs::read(ca_cert_path)?;
 
-    let certs: Vec<CertificateDer> = rustls_pemfile::certs(&mut cert_bytes.as_slice())
-        .collect::<Result<Vec<_>, _>>()?;
-    let key = rustls_pemfile::private_key(&mut key_bytes.as_slice())?
-        .ok_or("no private key found")?;
+    let certs: Vec<CertificateDer> =
+        rustls_pemfile::certs(&mut cert_bytes.as_slice()).collect::<Result<Vec<_>, _>>()?;
+    let key =
+        rustls_pemfile::private_key(&mut key_bytes.as_slice())?.ok_or("no private key found")?;
     let mut root_store = rustls::RootCertStore::empty();
-    let ca_certs: Vec<CertificateDer> = rustls_pemfile::certs(&mut ca_bytes.as_slice())
-        .collect::<Result<Vec<_>, _>>()?;
+    let ca_certs: Vec<CertificateDer> =
+        rustls_pemfile::certs(&mut ca_bytes.as_slice()).collect::<Result<Vec<_>, _>>()?;
     for ca in ca_certs {
         root_store.add(ca)?;
     }

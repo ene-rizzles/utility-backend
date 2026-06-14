@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use prometheus::{
-    register_counter_vec, register_histogram_vec, register_gauge, CounterVec, Gauge, HistogramVec,
+    register_counter_vec, register_gauge, register_histogram_vec, CounterVec, Gauge, HistogramVec,
 };
 
 lazy_static! {
@@ -34,9 +34,7 @@ lazy_static! {
 }
 
 pub fn record_ingestion(meter_id: &str, status: &str) {
-    INGESTED_EVENTS
-        .with_label_values(&[meter_id, status])
-        .inc();
+    INGESTED_EVENTS.with_label_values(&[meter_id, status]).inc();
 }
 
 pub fn record_db_starvation() {

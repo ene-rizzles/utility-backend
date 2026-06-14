@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -45,6 +45,9 @@ impl TariffEngine {
     }
 
     pub fn evaluate_batch(&self, readings: &[(DateTime<Utc>, f64)]) -> f64 {
-        readings.iter().map(|(ts, vol)| self.evaluate(*ts, *vol)).sum()
+        readings
+            .iter()
+            .map(|(ts, vol)| self.evaluate(*ts, *vol))
+            .sum()
     }
 }

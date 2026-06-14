@@ -1,26 +1,30 @@
-use dashmap::DashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::info;
 
 #[derive(Clone)]
 pub struct AdvisoryLock {
-    inner: Arc<DashMap<String, Mutex<()>>>,
+    inner: Arc<dashmap::DashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl AdvisoryLock {
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(DashMap::new()),
+            inner: Arc::new(dashmap::DashMap::new()),
         }
     }
 
-    pub async fn lock<F, T>(&self, resource: &str, f: F) -> T
+    pub async fn lock<Fut, T>(&self, resource: &str, f: impl FnOnce() -> Fut) -> T
     where
-        F: Future<Output = T>,
+        Fut: std::future::Future<Output = T>,
     {
-        let entry = self.inner.entry(resource.to_string()).or_insert_with(|| Mutex::new(()));
-        let _guard = entry.value().lock().await;
+        let mtx = self
+            .inner
+            .entry(resource.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .value()
+            .clone();
+        let _guard = mtx.lock().await;
         info!(resource = %resource, "advisory lock acquired");
         f().await
     }

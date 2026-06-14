@@ -1,6 +1,6 @@
+use fixed::types::I64F64;
 use utility_backend::tariffs::engine::{TariffEngine, TariffSchedule, TariffTier};
 use utility_backend::tariffs::math::convert_units;
-use fixed::types::I64F64;
 
 #[test]
 fn test_tariff_peak_vs_offpeak() {

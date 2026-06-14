@@ -44,9 +44,8 @@ async fn test_advisory_lock_prevents_concurrent_deductions() {
 
 #[test]
 fn test_crypto_verify_hardware_meter() {
-    use ed25519_dalek::SigningKey;
+    use ed25519_dalek::{Signer, SigningKey};
     use rand::rngs::OsRng;
-    use sha2::{Digest, Sha256};
 
     let mut csprng = OsRng;
     let signing_key = SigningKey::generate(&mut csprng);
@@ -56,7 +55,6 @@ fn test_crypto_verify_hardware_meter() {
         public_key: verifying_key,
     };
     let payload = b"flow_rate:15.7;pressure:42.3";
-    let digest = Sha256::digest(payload);
-    let signature = signing_key.sign(&digest);
+    let signature = signing_key.sign(payload);
     assert!(verify_packet(&identity, payload, &signature.to_bytes()).is_ok());
 }

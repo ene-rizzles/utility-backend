@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::info;
 
 pub struct NonceSequencer {
     grid_nonce: AtomicU64,

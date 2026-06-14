@@ -1,6 +1,4 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
-use sha2::{Digest, Sha256};
-use tracing::{info, warn};
 
 pub struct MeterIdentity {
     pub meter_id: String,
@@ -12,21 +10,17 @@ pub fn verify_packet(
     payload: &[u8],
     signature: &[u8],
 ) -> Result<(), &'static str> {
-    let mut hasher = Sha256::new();
-    hasher.update(payload);
-    let digest = hasher.finalize();
-
     let sig = Signature::from_slice(signature).map_err(|_| "invalid signature format")?;
     identity
         .public_key
-        .verify(&digest, &sig)
+        .verify(payload, &sig)
         .map_err(|_| "cryptographic signature mismatch")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ed25519_dalek::SigningKey;
+    use ed25519_dalek::{Signer, SigningKey};
     use rand::rngs::OsRng;
 
     #[test]
@@ -39,8 +33,7 @@ mod tests {
             public_key: verifying_key,
         };
         let payload = b"voltage:240.1;current:15.3";
-        let digest = Sha256::digest(payload);
-        let signature = signing_key.sign(&digest);
+        let signature = signing_key.sign(payload);
         assert!(verify_packet(&identity, payload, &signature.to_bytes()).is_ok());
     }
 }

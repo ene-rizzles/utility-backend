@@ -7,6 +7,7 @@ pub enum TxStatus {
     RolledBack,
 }
 
+#[allow(dead_code)]
 pub struct TwoPhaseCommit {
     tx_id: String,
     status: TxStatus,

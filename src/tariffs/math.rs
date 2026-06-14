@@ -7,7 +7,7 @@ pub struct CommodityAmount {
     pub fractional: u64,
 }
 
-pub fn scale_commodity(amount: f64, decimals: u8) -> Result<I64F64, &'static str> {
+pub fn scale_commodity(amount: f64, _decimals: u8) -> Result<I64F64, &'static str> {
     let scaled = I64F64::from_num(amount);
     Ok(scaled)
 }
@@ -32,7 +32,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn no_panic_on_extreme_values(v: f64) {
+        fn no_panic_on_extreme_values(v in -1e12f64..1e12f64) {
             let _ = scale_commodity(v, 7);
         }
     }

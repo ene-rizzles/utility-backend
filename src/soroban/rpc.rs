@@ -1,6 +1,5 @@
-use backoff::{ExponentialBackoff, future::retry};
 use serde::{Deserialize, Serialize};
-use tracing::{info, warn};
+use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SorobanRpcResponse {
@@ -10,6 +9,7 @@ pub struct SorobanRpcResponse {
     pub error: Option<serde_json::Value>,
 }
 
+#[allow(dead_code)]
 pub struct CircuitBreaker {
     failure_count: u64,
     max_failures: u64,
@@ -34,39 +34,22 @@ impl CircuitBreaker {
             return Err("circuit breaker open: rpc calls suspended");
         }
 
-        let op = || async {
-            let client = reqwest::Client::new();
-            let resp = client
-                .post(rpc_url)
-                .json(&payload)
-                .send()
-                .await
-                .map_err(|_| backoff::Error::Transient {
-                    err: "rpc request failed",
-                    retry_after: None,
-                })?;
-            let body: SorobanRpcResponse = resp.json().await.map_err(|_| backoff::Error::Permanent {
-                err: "failed to parse rpc response",
-            })?;
-            Ok(body)
-        };
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(rpc_url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|_| "rpc request failed")?;
 
-        let backoff = ExponentialBackoff::default();
-        match retry(backoff, op).await {
-            Ok(resp) => {
-                self.failure_count = 0;
-                self.is_open = false;
-                info!("soroban rpc call succeeded");
-                Ok(resp)
-            }
-            Err(_) => {
-                self.failure_count += 1;
-                if self.failure_count >= self.max_failures {
-                    self.is_open = true;
-                    warn!("circuit breaker opened due to repeated rpc failures");
-                }
-                Err("rpc call failed after retries")
-            }
-        }
+        let body: SorobanRpcResponse = resp
+            .json()
+            .await
+            .map_err(|_| "failed to parse rpc response")?;
+
+        self.failure_count = 0;
+        self.is_open = false;
+        info!("soroban rpc call succeeded");
+        Ok(body)
     }
 }

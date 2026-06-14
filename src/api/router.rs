@@ -1,12 +1,11 @@
 use axum::{
-    Router,
     middleware as axum_mw,
     routing::{get, post},
+    Router,
 };
-use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
-pub mod handlers;
+use super::handlers;
 
 pub async fn build_router() -> anyhow::Result<Router> {
     let cors = CorsLayer::permissive();

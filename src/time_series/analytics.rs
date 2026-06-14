@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use tracing::{info, warn};
+use tracing::warn;
 
 pub struct DiagnosticResult {
     pub meter_id: String,
@@ -21,9 +21,7 @@ pub fn analyze_consumption(
     if anomaly {
         warn!(
             meter_id,
-            deviation,
-            threshold,
-            "leakage or theft anomaly detected"
+            deviation, threshold, "leakage or theft anomaly detected"
         );
     }
     DiagnosticResult {

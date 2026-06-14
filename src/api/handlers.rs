@@ -43,7 +43,11 @@ pub async fn get_meter(Path(id): Path<String>) -> Json<MeterInfo> {
 }
 
 pub async fn list_tariffs() -> Json<Vec<&'static str>> {
-    Json(vec!["peak:0.15/kWh", "off-peak:0.08/kWh", "shoulder:0.11/kWh"])
+    Json(vec![
+        "peak:0.15/kWh",
+        "off-peak:0.08/kWh",
+        "shoulder:0.11/kWh",
+    ])
 }
 
 pub async fn submit_reading(Json(_body): Json<ReadingSubmission>) -> Json<&'static str> {
