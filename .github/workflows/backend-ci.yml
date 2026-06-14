@@ -63,7 +63,7 @@ jobs:
 
       - name: Run database migrations
         run: |
-          psql -h localhost -U utility -d utility_test -f src/time_series/compress.sql || echo "migration warnings ignored"
+          PGPASSWORD=utility_secret psql -h localhost -U utility -d utility_test -f src/time_series/compress.sql 2>&1 || true
         env:
           PGPASSWORD: utility_secret
 

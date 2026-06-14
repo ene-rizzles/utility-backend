@@ -11,6 +11,12 @@ pub struct DriftWorker {
     calibrations: Vec<DriftCalibration>,
 }
 
+impl Default for DriftWorker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DriftWorker {
     pub fn new() -> Self {
         Self {

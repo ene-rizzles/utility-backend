@@ -1,8 +1,9 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use tracing::{info, warn};
+use tracing::info;
 
+#[allow(dead_code)]
 pub struct LoadRunner {
     concurrent_meters: u64,
     meters: Vec<String>,

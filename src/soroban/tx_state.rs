@@ -19,6 +19,12 @@ pub struct TxStateController {
     active_transactions: Mutex<Vec<TwoPhaseCommit>>,
 }
 
+impl Default for TxStateController {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TxStateController {
     pub fn new() -> Self {
         Self {

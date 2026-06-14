@@ -1,4 +1,4 @@
-use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+use rustls::pki_types::CertificateDer;
 use std::sync::Arc;
 use tokio_rustls::TlsAcceptor;
 use tracing::info;
@@ -27,7 +27,7 @@ pub fn build_mtls_acceptor(
         .with_client_cert_verifier(
             rustls::server::WebPkiClientVerifier::builder(root_store.into()).build()?,
         )
-        .with_single_cert(certs, PrivateKeyDer::try_from(key)?)?;
+        .with_single_cert(certs, key)?;
 
     info!("mTLS acceptor configured with custom X.509 meter anchors");
     Ok(TlsAcceptor::from(Arc::new(config)))

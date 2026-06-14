@@ -7,6 +7,12 @@ pub struct NonceSequencer {
     last_committed: Mutex<u64>,
 }
 
+impl Default for NonceSequencer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NonceSequencer {
     pub fn new() -> Self {
         Self {

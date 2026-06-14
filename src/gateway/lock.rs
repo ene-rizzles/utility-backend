@@ -7,6 +7,12 @@ pub struct AdvisoryLock {
     inner: Arc<dashmap::DashMap<String, Arc<Mutex<()>>>>,
 }
 
+impl Default for AdvisoryLock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AdvisoryLock {
     pub fn new() -> Self {
         Self {
