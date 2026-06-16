@@ -127,6 +127,12 @@ impl Default for WeatherCoefficients {
     }
 }
 
+impl Default for DiagnosticEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DiagnosticEngine {
     /// Create a new engine with the default window sizes (30-day history, 7-day anomaly window).
     pub fn new() -> Self {
@@ -261,13 +267,13 @@ impl DiagnosticEngine {
 
         // ---- Trend via centered moving average ----
         let window = (n.min(7) / 2 * 2 + 1).max(3); // odd, at least 3
-        let half = window as usize / 2;
+        let half = window / 2;
         let mut trend = vec![0.0; n];
 
-        for i in 0..n {
-            let start = if i >= half { i - half } else { 0 };
+        for (i, t) in trend.iter_mut().enumerate() {
+            let start = i.saturating_sub(half);
             let end = (i + half + 1).min(n);
-            trend[i] = values[start..end].iter().sum::<f64>() / (end - start) as f64;
+            *t = values[start..end].iter().sum::<f64>() / (end - start) as f64;
         }
 
         // ---- Seasonal (monthly) factors ----
@@ -286,17 +292,17 @@ impl DiagnosticEngine {
         }
 
         let mut factors = [1.0_f64; 12];
-        for m in 0..12 {
+        for (m, f) in factors.iter_mut().enumerate() {
             if month_counts[m] > 0 {
-                factors[m] = month_sums[m] / month_counts[m] as f64;
+                *f = month_sums[m] / month_counts[m] as f64;
             }
         }
 
         // Normalise so factors average to 1.0
         let mean_f: f64 = factors.iter().sum::<f64>() / 12.0;
         if mean_f > 0.0 {
-            for m in 0..12 {
-                factors[m] /= mean_f;
+            for f in factors.iter_mut() {
+                *f /= mean_f;
             }
         }
 
@@ -322,7 +328,7 @@ impl DiagnosticEngine {
 
     /// Compute the additive weather adjustment for the latest reading using
     /// pre-fitted per-meter coefficients.
-    fn compute_weather_adjustment(&self, meter_id: &str, reading: &Reading) -> f64 {
+    pub(crate) fn compute_weather_adjustment(&self, meter_id: &str, reading: &Reading) -> f64 {
         if let Some(ref weather) = reading.weather {
             if let Some(c) = self.weather_coefficients.get(meter_id) {
                 c.temp_slope * weather.temperature_c
@@ -687,7 +693,7 @@ mod tests {
         for days_ago in 0..90 {
             let ts = now - Duration::days(days_ago);
             let month = ts.month0(); // 0-based
-            let seasonal_boost = if month >= 5 && month <= 7 { 1.5 } else { 1.0 };
+            let seasonal_boost = if (5..=7).contains(&month) { 1.5 } else { 1.0 };
             let value = 100.0 * seasonal_boost + (days_ago as f64).sin() * 5.0;
             engine.ingest_reading(
                 "MTR-G",
