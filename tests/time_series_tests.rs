@@ -40,7 +40,10 @@ fn test_engine_ingest_and_analyze_no_anomaly() {
         );
     }
     let report = engine.get_diagnostics("MTR-A").unwrap();
-    assert!(!report.anomaly_detected, "should not trigger on stable data");
+    assert!(
+        !report.anomaly_detected,
+        "should not trigger on stable data"
+    );
 }
 
 #[test]

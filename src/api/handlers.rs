@@ -63,7 +63,9 @@ pub async fn settle_account(Json(_body): Json<SettlementRequest>) -> Json<&'stat
 pub async fn get_diagnostics(
     Path(meter_id): Path<String>,
 ) -> Result<Json<DiagnosticReport>, StatusCode> {
-    let mut engine = global_engine().lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut engine = global_engine()
+        .lock()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     engine
         .get_diagnostics(&meter_id)
         .map(Json)

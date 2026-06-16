@@ -101,13 +101,13 @@ pub struct DiagnosticEngine {
     /// Per-meter rolling window of readings (configurable, default 30 days).
     meter_readings: BTreeMap<String, VecDeque<Reading>>,
     /// Pre-computed seasonal profiles per meter.
-    seasonal_profiles: BTreeMap<String, SeasonalProfile>,
+    _seasonal_profiles: BTreeMap<String, SeasonalProfile>,
     /// Fitted weather-model coefficients per meter.
     weather_coefficients: BTreeMap<String, WeatherCoefficients>,
     /// Size of the historical rolling window in days.
     history_window_days: i64,
     /// Size of the anomaly-analysis sliding window in days.
-    anomaly_window_days: i64,
+    _anomaly_window_days: i64,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -132,10 +132,10 @@ impl DiagnosticEngine {
     pub fn new() -> Self {
         Self {
             meter_readings: BTreeMap::new(),
-            seasonal_profiles: BTreeMap::new(),
+            _seasonal_profiles: BTreeMap::new(),
             weather_coefficients: BTreeMap::new(),
             history_window_days: 30,
-            anomaly_window_days: 7,
+            _anomaly_window_days: 7,
         }
     }
 
@@ -143,20 +143,17 @@ impl DiagnosticEngine {
     pub fn with_windows(history_days: i64, anomaly_days: i64) -> Self {
         Self {
             meter_readings: BTreeMap::new(),
-            seasonal_profiles: BTreeMap::new(),
+            _seasonal_profiles: BTreeMap::new(),
             weather_coefficients: BTreeMap::new(),
             history_window_days: history_days,
-            anomaly_window_days: anomaly_days,
+            _anomaly_window_days: anomaly_days,
         }
     }
 
     /// Ingest a new reading into the meter's rolling window.
     /// Readings older than `history_window_days` are pruned.
     pub fn ingest_reading(&mut self, meter_id: &str, reading: Reading) {
-        let readings = self
-            .meter_readings
-            .entry(meter_id.to_string())
-            .or_default();
+        let readings = self.meter_readings.entry(meter_id.to_string()).or_default();
         let cutoff = Utc::now() - Duration::days(self.history_window_days);
         while let Some(front) = readings.front() {
             if front.timestamp < cutoff {
@@ -192,9 +189,10 @@ impl DiagnosticEngine {
         let dynamic_threshold = self.compute_p95_threshold(&residuals);
 
         // 5. Expected volume
-        let trend_component = trend.last().copied().unwrap_or_else(|| {
-            all_values.iter().sum::<f64>() / all_values.len() as f64
-        });
+        let trend_component = trend
+            .last()
+            .copied()
+            .unwrap_or_else(|| all_values.iter().sum::<f64>() / all_values.len() as f64);
         let expected_volume = (trend_component * seasonal_factor) + weather_adjustment;
         let actual_volume = latest.value;
         let deviation = actual_volume - expected_volume;
@@ -218,8 +216,7 @@ impl DiagnosticEngine {
             None
         };
 
-        let historical_baseline =
-            all_values.iter().sum::<f64>() / all_values.len() as f64;
+        let historical_baseline = all_values.iter().sum::<f64>() / all_values.len() as f64;
 
         let report = DiagnosticReport {
             meter_id: meter_id.to_string(),
@@ -388,7 +385,10 @@ impl DiagnosticEngine {
 
         let denom = v_t * v_p - c_tp * c_tp;
         let (b_t, b_p) = if denom.abs() > 1e-12 {
-            ((c_tv * v_p - c_pv * c_tp) / denom, (c_pv * v_t - c_tv * c_tp) / denom)
+            (
+                (c_tv * v_p - c_pv * c_tp) / denom,
+                (c_pv * v_t - c_tv * c_tp) / denom,
+            )
         } else {
             (0.0, 0.0)
         };
@@ -528,10 +528,8 @@ pub fn analyze_consumption(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
-
     fn make_ts(days_ago: i64) -> DateTime<Utc> {
-        Utc.now() - Duration::days(days_ago)
+        chrono::Utc::now() - Duration::days(days_ago)
     }
 
     fn r(value: f64, days_ago: i64) -> Reading {
@@ -562,7 +560,11 @@ mod tests {
 
     #[test]
     fn test_legacy_anomaly_detection_leak() {
-        let readings = vec![(Utc::now(), 500.0), (Utc::now(), 600.0), (Utc::now(), 550.0)];
+        let readings = vec![
+            (Utc::now(), 500.0),
+            (Utc::now(), 600.0),
+            (Utc::now(), 550.0),
+        ];
         let result = analyze_consumption("MTR-002", &readings, 300.0, 50.0);
         assert!(result.anomaly_detected);
     }
@@ -574,7 +576,10 @@ mod tests {
             engine.ingest_reading("MTR-A", r(100.0 + (i as f64 * 0.5), i));
         }
         let report = engine.get_diagnostics("MTR-A").unwrap();
-        assert!(!report.anomaly_detected, "should not trigger on stable data");
+        assert!(
+            !report.anomaly_detected,
+            "should not trigger on stable data"
+        );
     }
 
     #[test]
