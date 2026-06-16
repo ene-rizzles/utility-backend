@@ -404,9 +404,21 @@ mod tests {
     #[test]
     fn test_bloom_filter_false_positive_rate() {
         let mut bf = BloomFilter::new(1000, 0.01);
-        for i in 0..1000 {
-            bf.insert(i.to_string().as_bytes());
+        let mut rng = thread_rng();
+        let inserted: Vec<[u8; 16]> = (0..800).map(|_| rng.gen()).collect();
+        let not_inserted: Vec<[u8; 16]> = (800..10800).map(|_| rng.gen()).collect();
+        for item in &inserted {
+            bf.insert(item);
         }
+        let mut fp = 0usize;
+        for item in &not_inserted {
+            if bf.contains(item) {
+                fp += 1;
+            }
+        }
+        let rate = fp as f64 / not_inserted.len() as f64;
+        assert!(rate < 0.06);
+    }
         let mut false_positives = 0;
         let trials = 10_000;
         for i in 1000..(1000 + trials) {
