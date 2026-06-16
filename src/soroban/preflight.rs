@@ -160,15 +160,13 @@ pub async fn run_preflight(
 
 fn apply_safety_margin(result: &PreflightResult, margin: f64) -> PreflightResult {
     let numerator = (margin * 100.0 + 100.0).round() as u64;
-    fn ceil_div(v: u64, n: u64) -> u64 {
-        (v * n + 99) / 100
-    }
+    let scale = |v: u64| v * numerator;
     PreflightResult {
-        footprint: ceil_div(result.footprint, numerator),
-        instructions: ceil_div(result.instructions, numerator),
-        read_bytes: ceil_div(result.read_bytes, numerator),
-        write_bytes: ceil_div(result.write_bytes, numerator),
-        recommended_fee: ceil_div(result.recommended_fee, numerator),
+        footprint: scale(result.footprint).div_ceil(100),
+        instructions: scale(result.instructions).div_ceil(100),
+        read_bytes: scale(result.read_bytes).div_ceil(100),
+        write_bytes: scale(result.write_bytes).div_ceil(100),
+        recommended_fee: scale(result.recommended_fee).div_ceil(100),
     }
 }
 
