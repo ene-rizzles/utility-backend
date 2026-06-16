@@ -101,12 +101,14 @@ pub struct RegisterMeterResponse {
 pub async fn register_meter(
     Json(body): Json<RegisterMeterRequest>,
 ) -> Result<Json<RegisterMeterResponse>, StatusCode> {
-    let public_key_bytes = hex::decode(&body.public_key_hex).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let public_key_bytes =
+        hex::decode(&body.public_key_hex).map_err(|_| StatusCode::BAD_REQUEST)?;
     let public_key_arr: [u8; 32] = public_key_bytes
         .as_slice()
         .try_into()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let public_key = VerifyingKey::from_bytes(&public_key_arr).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let public_key =
+        VerifyingKey::from_bytes(&public_key_arr).map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let tpm_attestation = match &body.tpm_attestation_hex {
         Some(h) => Some(hex::decode(h).map_err(|_| StatusCode::BAD_REQUEST)?),
@@ -128,7 +130,9 @@ pub async fn register_meter(
     let tpm_data = tpm_attestation.as_deref();
     let aik_ref = aik_public_key.as_ref();
 
-    let mut registry = global_registry().lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut registry = global_registry()
+        .lock()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     registry
         .register_meter(body.meter_id.clone(), public_key, tpm_data, aik_ref)
         .map_err(|e| {
@@ -173,7 +177,9 @@ pub async fn rotate_key(
     let old_sig_bytes =
         hex::decode(&body.old_signature_hex).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let mut registry = global_registry().lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut registry = global_registry()
+        .lock()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     registry
         .rotate_key(&body.meter_id, &new_public_key, &old_sig_bytes)
         .map_err(|_| StatusCode::BAD_REQUEST)?;

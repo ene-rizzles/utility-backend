@@ -153,13 +153,10 @@ impl MeterRegistry {
         }
 
         let sig = Signature::from_slice(signature).map_err(|_| "invalid signature format")?;
-        identity
-            .public_key
-            .verify(payload, &sig)
-            .map_err(|_| {
-                Self::log_auth_failure(meter_id, "signature mismatch", source_ip);
-                "cryptographic signature mismatch"
-            })
+        identity.public_key.verify(payload, &sig).map_err(|_| {
+            Self::log_auth_failure(meter_id, "signature mismatch", source_ip);
+            "cryptographic signature mismatch"
+        })
     }
 
     pub fn rotate_key(
@@ -477,7 +474,12 @@ mod tests {
 
         let mut registry = MeterRegistry::new();
         registry
-            .register_meter("MTR-TPM".into(), meter_vk, Some(&attestation), Some(&aik_vk))
+            .register_meter(
+                "MTR-TPM".into(),
+                meter_vk,
+                Some(&attestation),
+                Some(&aik_vk),
+            )
             .unwrap();
 
         let payload = b"test";
