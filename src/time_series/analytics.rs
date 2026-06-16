@@ -191,8 +191,11 @@ impl DiagnosticEngine {
         // 3. Seasonal factor for the current period
         let seasonal_factor = seasonal.last().copied().unwrap_or(1.0);
 
-        // 4. Dynamic threshold (p95 of absolute residuals)
-        let dynamic_threshold = self.compute_p95_threshold(&residuals);
+        // 4. Dynamic threshold (p95 of pre-anomaly absolute residuals)
+        let n_resid = residuals.len();
+        let window = (n_resid.min(7) / 2 * 2 + 1).max(3);
+        let threshold_residuals = &residuals[..n_resid.saturating_sub(window)];
+        let dynamic_threshold = self.compute_p95_threshold(threshold_residuals);
 
         // 5. Expected volume
         let trend_component = trend
@@ -265,14 +268,14 @@ impl DiagnosticEngine {
             return (values.to_vec(), vec![1.0; n], vec![0.0; n]);
         }
 
-        // ---- Trend via centered moving average ----
+        // ---- Trend via trailing (causal) moving average ----
         let window = (n.min(7) / 2 * 2 + 1).max(3); // odd, at least 3
         let half = window / 2;
         let mut trend = vec![0.0; n];
 
         for (i, t) in trend.iter_mut().enumerate() {
-            let start = i.saturating_sub(half);
-            let end = (i + half + 1).min(n);
+            let start = i.saturating_sub(2 * half);
+            let end = (i + 1).min(n);
             *t = values[start..end].iter().sum::<f64>() / (end - start) as f64;
         }
 
