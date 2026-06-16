@@ -219,6 +219,7 @@ impl DiagnosticEngine {
                 &readings.iter().map(|r| r.value).collect::<Vec<_>>(),
                 &residuals,
                 deviation,
+                deviation_pct,
                 seasonal_factor,
             ))
         } else {
@@ -432,6 +433,7 @@ impl DiagnosticEngine {
         recent_values: &[f64],
         residuals: &[f64],
         deviation: f64,
+        deviation_pct: f64,
         seasonal_factor: f64,
     ) -> ProbableCause {
         // Sensor fault check: abnormally high variance in the most recent readings
@@ -462,8 +464,8 @@ impl DiagnosticEngine {
             }
         }
 
-        // Theft: large negative deviation
-        if deviation < -50.0 {
+        // Theft: large negative percentage deviation (25%+ below expected)
+        if deviation_pct < -25.0 {
             return ProbableCause::Theft;
         }
 
