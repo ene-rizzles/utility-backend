@@ -39,7 +39,7 @@ impl BloomFilter {
         let num_bits = Self::optimal_bits(num_items, false_positive_rate);
         let num_hashes = Self::optimal_hashes(num_bits, num_items);
         Self {
-            bits: vec![0u64; (num_bits + 63) / 64],
+            bits: vec![0u64; num_bits.div_ceil(64)],
             num_bits,
             num_hashes,
         }
@@ -88,6 +88,12 @@ impl BloomFilter {
 pub struct MeterRegistry {
     meters: HashMap<String, MeterIdentity>,
     crl: BloomFilter,
+}
+
+impl Default for MeterRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MeterRegistry {
@@ -313,7 +319,7 @@ mod tests {
 
     #[test]
     fn test_verify_wrong_key_fails() {
-        let (signing_key1, verifying_key1) = make_keypair();
+        let (_signing_key1, verifying_key1) = make_keypair();
         let (signing_key2, _verifying_key2) = make_keypair();
         let mut registry = MeterRegistry::new();
         registry
@@ -491,8 +497,8 @@ mod tests {
 
     #[test]
     fn test_register_with_bad_tpm_attestation() {
-        let (meter_vk, _) = make_keypair();
-        let (aik_sk, aik_vk) = make_keypair();
+        let (_, meter_vk) = make_keypair();
+        let (aik_sk, _aik_vk) = make_keypair();
         let (_wrong_sk, wrong_vk) = make_keypair();
 
         let attestation_data = b"enrollment-request-nonce";
