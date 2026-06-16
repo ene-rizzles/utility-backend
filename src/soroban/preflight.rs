@@ -293,7 +293,7 @@ mod tests {
     fn test_budget_optimizer_always_succeeds() {
         let success = |_budget: u64| true;
         let optimum = budget_optimizer(1000, success, 10);
-        assert!(optimum >= 500 && optimum <= 501);
+        assert!((500..=501).contains(&optimum));
     }
 
     #[test]
