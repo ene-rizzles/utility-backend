@@ -263,6 +263,7 @@ mod tests {
     use super::*;
     use ed25519_dalek::{Signer, SigningKey};
     use rand::rngs::OsRng;
+    use rand::thread_rng;
 
     fn make_keypair() -> (SigningKey, VerifyingKey) {
         let mut csprng = OsRng;
