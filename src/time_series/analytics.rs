@@ -212,11 +212,6 @@ impl DiagnosticEngine {
         };
         let residual = residuals.last().copied().unwrap_or(0.0);
         let anomaly_detected = deviation.abs() > dynamic_threshold;
-        eprintln!(
-            "DEBUG analyze[{}]: n={} trend={:.4} seasonal={:.4} expected={:.4} actual={:.4} dev={:.4} dev_pct={:.2} thresh={:.4} resid={:.4} anom={}",
-            meter_id, n_resid, trend_component, seasonal_factor, expected_volume, actual_volume,
-            deviation, deviation_pct, dynamic_threshold, residual, anomaly_detected
-        );
 
         // 6. Probable-cause classification
         let probable_cause = if anomaly_detected {
@@ -285,9 +280,8 @@ impl DiagnosticEngine {
             *t = values[start..end].iter().sum::<f64>() / (end - start) as f64;
         }
 
-        // ---- Seasonal (monthly) factors ----
-        let mut month_sums = [0.0_f64; 12];
-        let mut month_counts = [0_usize; 12];
+        // ---- Seasonal (monthly) factors (median, robust to anomalies) ----
+        let mut month_vals: [Vec<f64>; 12] = Default::default();
 
         for (i, ts) in timestamps.iter().enumerate() {
             let m = ts.month0() as usize;
@@ -296,14 +290,19 @@ impl DiagnosticEngine {
             } else {
                 1.0
             };
-            month_sums[m] += detrended;
-            month_counts[m] += 1;
+            month_vals[m].push(detrended);
         }
 
         let mut factors = [1.0_f64; 12];
         for (m, f) in factors.iter_mut().enumerate() {
-            if month_counts[m] > 0 {
-                *f = month_sums[m] / month_counts[m] as f64;
+            if !month_vals[m].is_empty() {
+                month_vals[m].sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let len = month_vals[m].len();
+                *f = if len % 2 == 0 {
+                    (month_vals[m][len / 2 - 1] + month_vals[m][len / 2]) / 2.0
+                } else {
+                    month_vals[m][len / 2]
+                };
             }
         }
 
@@ -441,6 +440,20 @@ impl DiagnosticEngine {
         deviation_pct: f64,
         seasonal_factor: f64,
     ) -> ProbableCause {
+        // Theft: large negative percentage deviation (25%+ below expected)
+        if deviation_pct < -25.0 {
+            return ProbableCause::Theft;
+        }
+
+        // Leak: sustained positive deviation over recent residuals
+        if deviation > 0.0 {
+            let recent_res: Vec<f64> = residuals.iter().rev().take(5).copied().collect();
+            let pos = recent_res.iter().filter(|&&r| r > 0.0).count();
+            if pos >= 4 {
+                return ProbableCause::Leak;
+            }
+        }
+
         // Sensor fault check: abnormally high variance in the most recent readings
         let window: Vec<f64> = recent_values.iter().rev().take(10).copied().collect();
         if window.len() >= 4 {
@@ -458,20 +471,6 @@ impl DiagnosticEngine {
             if mean_val.abs() > 1e-10 && (deviation / mean_val).abs() < 0.15 {
                 return ProbableCause::SeasonalVariation;
             }
-        }
-
-        // Leak: sustained positive deviation over recent residuals
-        if deviation > 0.0 {
-            let recent_res: Vec<f64> = residuals.iter().rev().take(5).copied().collect();
-            let pos = recent_res.iter().filter(|&&r| r > 0.0).count();
-            if pos >= 4 {
-                return ProbableCause::Leak;
-            }
-        }
-
-        // Theft: large negative percentage deviation (25%+ below expected)
-        if deviation_pct < -25.0 {
-            return ProbableCause::Theft;
         }
 
         ProbableCause::Normal
@@ -610,11 +609,6 @@ mod tests {
             engine.ingest_reading("MTR-B", r(200.0 + (i as f64).sin() * 5.0, i));
         }
         let report = engine.get_diagnostics("MTR-B").unwrap();
-        eprintln!(
-            "DEBUG LEAK TEST: deviation={:.4} threshold={:.4} anomaly={} pct={:.2} cause={:?}",
-            report.deviation, report.dynamic_threshold, report.anomaly_detected,
-            report.deviation_pct, report.probable_cause
-        );
         assert!(report.anomaly_detected, "should detect sustained leak");
         assert_eq!(
             report.probable_cause,
@@ -651,11 +645,6 @@ mod tests {
             engine.ingest_reading("MTR-D", r(30.0, i));
         }
         let report = engine.get_diagnostics("MTR-D").unwrap();
-        eprintln!(
-            "DEBUG THEFT TEST: deviation={:.4} threshold={:.4} anomaly={} pct={:.2} cause={:?} expected_vol={:.4} actual_vol={:.4}",
-            report.deviation, report.dynamic_threshold, report.anomaly_detected,
-            report.deviation_pct, report.probable_cause, report.expected_volume, report.actual_volume
-        );
         if report.anomaly_detected {
             assert_eq!(report.probable_cause, Some(ProbableCause::Theft));
         }
