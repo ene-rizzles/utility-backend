@@ -328,7 +328,7 @@ impl DiagnosticEngine {
 
     /// Compute the additive weather adjustment for the latest reading using
     /// pre-fitted per-meter coefficients.
-    pub(crate) fn compute_weather_adjustment(&self, meter_id: &str, reading: &Reading) -> f64 {
+    pub fn compute_weather_adjustment(&self, meter_id: &str, reading: &Reading) -> f64 {
         if let Some(ref weather) = reading.weather {
             if let Some(c) = self.weather_coefficients.get(meter_id) {
                 c.temp_slope * weather.temperature_c
