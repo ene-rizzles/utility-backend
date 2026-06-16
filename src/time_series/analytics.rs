@@ -212,6 +212,11 @@ impl DiagnosticEngine {
         };
         let residual = residuals.last().copied().unwrap_or(0.0);
         let anomaly_detected = deviation.abs() > dynamic_threshold;
+        eprintln!(
+            "DEBUG analyze[{}]: n={} trend={:.4} seasonal={:.4} expected={:.4} actual={:.4} dev={:.4} dev_pct={:.2} thresh={:.4} resid={:.4} anom={}",
+            meter_id, n_resid, trend_component, seasonal_factor, expected_volume, actual_volume,
+            deviation, deviation_pct, dynamic_threshold, residual, anomaly_detected
+        );
 
         // 6. Probable-cause classification
         let probable_cause = if anomaly_detected {
@@ -605,6 +610,11 @@ mod tests {
             engine.ingest_reading("MTR-B", r(200.0 + (i as f64).sin() * 5.0, i));
         }
         let report = engine.get_diagnostics("MTR-B").unwrap();
+        eprintln!(
+            "DEBUG LEAK TEST: deviation={:.4} threshold={:.4} anomaly={} pct={:.2} cause={:?}",
+            report.deviation, report.dynamic_threshold, report.anomaly_detected,
+            report.deviation_pct, report.probable_cause
+        );
         assert!(report.anomaly_detected, "should detect sustained leak");
         assert_eq!(
             report.probable_cause,
@@ -641,6 +651,11 @@ mod tests {
             engine.ingest_reading("MTR-D", r(30.0, i));
         }
         let report = engine.get_diagnostics("MTR-D").unwrap();
+        eprintln!(
+            "DEBUG THEFT TEST: deviation={:.4} threshold={:.4} anomaly={} pct={:.2} cause={:?} expected_vol={:.4} actual_vol={:.4}",
+            report.deviation, report.dynamic_threshold, report.anomaly_detected,
+            report.deviation_pct, report.probable_cause, report.expected_volume, report.actual_volume
+        );
         if report.anomaly_detected {
             assert_eq!(report.probable_cause, Some(ProbableCause::Theft));
         }
