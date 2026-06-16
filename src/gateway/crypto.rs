@@ -263,8 +263,8 @@ mod tests {
     use super::*;
     use ed25519_dalek::{Signer, SigningKey};
     use rand::rngs::OsRng;
-    use rand::thread_rng;
     use rand::Rng;
+    use rand::SeedableRng;
 
     fn make_keypair() -> (SigningKey, VerifyingKey) {
         let mut csprng = OsRng;
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     fn test_bloom_filter_false_positive_rate() {
         let mut bf = BloomFilter::new(1000, 0.01);
-        let mut rng = thread_rng();
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
         let inserted: Vec<[u8; 16]> = (0..800).map(|_| rng.gen()).collect();
         let not_inserted: Vec<[u8; 16]> = (800..10800).map(|_| rng.gen()).collect();
         for item in &inserted {
@@ -419,7 +419,7 @@ mod tests {
             }
         }
         let rate = fp as f64 / not_inserted.len() as f64;
-        assert!(rate < 0.06);
+        assert!(rate < 0.05);
     }
 
     #[test]
