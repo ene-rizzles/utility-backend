@@ -291,7 +291,16 @@ mod tests {
 
     #[test]
     fn test_budget_optimizer_always_succeeds() {
-        let optimum = budget_optimizer(1000, |budget| Ok(BudgetCheckResult { success: true, budget_left: budget.saturating_sub(0) }), 10);
+        let optimum = budget_optimizer(
+            1000,
+            |budget| {
+                Ok(BudgetCheckResult {
+                    success: true,
+                    budget_left: budget.saturating_sub(0),
+                })
+            },
+            10,
+        );
         assert!(optimum.unwrap() >= 500 && optimum.unwrap() <= 501);
     }
 

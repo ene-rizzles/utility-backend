@@ -419,16 +419,6 @@ mod tests {
         let rate = fp as f64 / not_inserted.len() as f64;
         assert!(rate < 0.06);
     }
-        let mut false_positives = 0;
-        let trials = 10_000;
-        for i in 1000..(1000 + trials) {
-            if bf.contains(i.to_string().as_bytes()) {
-                false_positives += 1;
-            }
-        }
-        let rate = false_positives as f64 / trials as f64;
-        assert!(rate < 0.05); // Should be ~1% but allow some variance
-    }
 
     #[test]
     fn test_bloom_filter_contains_inserted() {
