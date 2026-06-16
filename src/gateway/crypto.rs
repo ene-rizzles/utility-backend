@@ -59,16 +59,11 @@ impl BloomFilter {
 
     fn hash_indices(&self, data: &[u8]) -> Vec<usize> {
         let hash = Sha256::digest(data);
+        let h1 = u64::from_le_bytes(hash[0..8].try_into().unwrap());
+        let h2 = u64::from_le_bytes(hash[8..16].try_into().unwrap());
 
         (0..self.num_hashes)
-            .map(|i| {
-                let mut h = [0u8; 32];
-                h.copy_from_slice(&hash);
-                h[0] = h[0].wrapping_add(i as u8);
-                h[1] = h[1].wrapping_add(i as u8);
-                let val = u64::from_le_bytes(h[..8].try_into().unwrap());
-                (val as usize) % self.num_bits
-            })
+            .map(|i| h1.wrapping_add((i as u64).wrapping_mul(h2)) as usize % self.num_bits)
             .collect()
     }
 
