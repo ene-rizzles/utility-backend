@@ -456,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_tpm_attestation_invalid_signature() {
-        let (aik_sk, aik_vk) = make_keypair();
+        let (aik_sk, _aik_vk) = make_keypair();
         let (_wrong_sk, wrong_vk) = make_keypair();
         let signed_data = b"pcr-values-and-nonce";
         let sig = aik_sk.sign(signed_data);
