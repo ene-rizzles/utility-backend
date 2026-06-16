@@ -298,7 +298,7 @@ impl DiagnosticEngine {
             if !month_vals[m].is_empty() {
                 month_vals[m].sort_by(|a, b| a.partial_cmp(b).unwrap());
                 let len = month_vals[m].len();
-                *f = if len % 2 == 0 {
+                *f = if len.is_multiple_of(2) {
                     (month_vals[m][len / 2 - 1] + month_vals[m][len / 2]) / 2.0
                 } else {
                     month_vals[m][len / 2]
