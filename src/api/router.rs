@@ -17,6 +17,10 @@ pub async fn build_router() -> anyhow::Result<Router> {
         .route("/api/v1/tariffs", get(handlers::list_tariffs))
         .route("/api/v1/readings", post(handlers::submit_reading))
         .route("/api/v1/settle", post(handlers::settle_account))
+        .route(
+            "/api/v1/time-series/diagnostics/:meter_id",
+            get(handlers::get_diagnostics),
+        )
         .route("/metrics", get(handlers::metrics_handler))
         .layer(axum_mw::from_fn(crate::api::middleware::rate_limit_layer))
         .layer(cors);

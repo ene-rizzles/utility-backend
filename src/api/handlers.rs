@@ -1,5 +1,7 @@
-use axum::{extract::Path, Json};
+use axum::{extract::Path, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
+
+use crate::time_series::analytics::{global_engine, DiagnosticReport};
 
 #[derive(Serialize)]
 pub struct MeterInfo {
@@ -56,6 +58,16 @@ pub async fn submit_reading(Json(_body): Json<ReadingSubmission>) -> Json<&'stat
 
 pub async fn settle_account(Json(_body): Json<SettlementRequest>) -> Json<&'static str> {
     Json("settlement initiated")
+}
+
+pub async fn get_diagnostics(
+    Path(meter_id): Path<String>,
+) -> Result<Json<DiagnosticReport>, StatusCode> {
+    let mut engine = global_engine().lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    engine
+        .get_diagnostics(&meter_id)
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
 }
 
 pub async fn metrics_handler() -> &'static str {
