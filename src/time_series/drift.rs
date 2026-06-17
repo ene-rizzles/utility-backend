@@ -140,10 +140,7 @@ impl DriftWorkerPool {
 
         if self
             .command_tx
-            .send(DriftCommand::Recalibrate {
-                meter_id,
-                respond,
-            })
+            .send(DriftCommand::Recalibrate { meter_id, respond })
             .await
             .is_err()
         {
@@ -287,13 +284,10 @@ impl DriftWorkerPool {
         }
     }
 
-    async fn reconciliation_loop(
-        calibrations: Arc<RwLock<HashMap<String, DriftCalibration>>>,
-    ) {
-        let mut interval =
-            tokio::time::interval(tokio::time::Duration::from_secs(
-                RECONCILIATION_INTERVAL_HOURS * 3600,
-            ));
+    async fn reconciliation_loop(calibrations: Arc<RwLock<HashMap<String, DriftCalibration>>>) {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            RECONCILIATION_INTERVAL_HOURS * 3600,
+        ));
         interval.tick().await; // skip first tick
 
         loop {
@@ -306,8 +300,7 @@ impl DriftWorkerPool {
             };
 
             for cal in &cal_snapshot {
-                let simulated_drift = (cal.accumulated_drift_ppb + 5.0)
-                    .min(500_000.0); // max ±500 ppb per 30-day cycle
+                let simulated_drift = (cal.accumulated_drift_ppb + 5.0).min(500_000.0); // max ±500 ppb per 30-day cycle
                 let mut cal_map = calibrations.write().await;
                 if let Some(entry) = cal_map.get_mut(&cal.meter_id) {
                     entry.accumulated_drift_ppb = simulated_drift;
@@ -348,7 +341,10 @@ mod tests {
         let corrected = pool
             .apply_drift_correction("MTR-TEST-001".into(), 100.0, 25.0, "flow".into())
             .await;
-        assert!((corrected - 100.0).abs() < 0.001, "new meter returns raw value");
+        assert!(
+            (corrected - 100.0).abs() < 0.001,
+            "new meter returns raw value"
+        );
     }
 
     #[tokio::test]
