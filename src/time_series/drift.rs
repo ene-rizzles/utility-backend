@@ -70,8 +70,10 @@ pub struct DriftMetrics {
 }
 
 pub struct DriftWorkerPool {
+    #[allow(dead_code)]
     calibrations: Arc<RwLock<HashMap<String, DriftCalibration>>>,
     command_tx: mpsc::Sender<DriftCommand>,
+    #[allow(dead_code)]
     metrics: Arc<RwLock<DriftMetrics>>,
 }
 
